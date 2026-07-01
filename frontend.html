@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NestFinder | Production</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="container mx-auto p-6"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3000'; // Change this when deploying to Render
+
+        async function login(email, password) {
+            const res = await fetch(`${API_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if(data.token) {
+                localStorage.setItem('token', data.token);
+                // Redirect user to dashboard
+            }
+        }
+
+        async function fetchProperties() {
+            const res = await fetch(`${API_URL}/api/properties`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            return await res.json();
+        }
+    </script>
+</body>
+</html>
