@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestFinder | Enterprise Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <header class="bg-slate-900 text-white p-6 shadow-md flex justify-between items-center">
+        <h1 class="text-2xl font-bold tracking-tight"><i class="fa-solid fa-house-chimney text-indigo-400"></i> NestFinder</h1>
+        <button id="auth-nav" onclick="logout()" class="hidden bg-rose-600 hover:bg-rose-700 px-5 py-2 rounded-lg font-semibold transition">Logout</button>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-8">
+        <div id="view-container"></div>
+    </main>
+
+    <script>
+        // Data Service: Centralized storage logic
+        const store = {
+            get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
+            set: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+            getUser: () => JSON.parse(localStorage.getItem('currentUser'))
+        };
+
+        let state = {
+            users: store.get('users'),
+            properties: store.get('props'),
+            inquiries: store.get('inquiries')
+        };
+
+        function render(view = 'login', data = {}) {
+            const container = document.getElementById('view-container');
+            const user = store.getUser();
+            document.getElementById('auth-nav').classList.toggle('hidden', !user);
+
+            // Routing Logic
+            switch(view) {
+                case 'user':
+                    container.innerHTML = `
+                        <input type="text" placeholder="Search cities..." onkeyup="filterProps(this.value)" class="w-full p-4 border rounded-xl mb-6 shadow-sm">
+                        <div id="grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>`;
+                    renderGrid(state.properties);
+                    break;
+                case 'seller':
+                    container.innerHTML = `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border mb-8">
+                            <h2 class="text-xl font-bold mb-4">Add Listing</h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input id="title" placeholder="Title" class="border p-3 rounded-lg">
+                                <input id="price" placeholder="Price" class="border p-3 rounded-lg">
+                                <input id="address" placeholder="Address" class="col-span-2 border p-3 rounded-lg">
+                                <button onclick="addProperty()" class="col-span-2 bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700">Publish Listing</button>
+                            </div>
+                        </div>
+                        <div id="inquiry-section"></div>`;
+                    renderInquiries();
+                    break;
+                default:
+                    container.innerHTML = `<div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border">
+                        <h2 class="text-2xl font-bold mb-6">Welcome Back</h2>
+                        <input id="email" class="w-full p-3 border rounded-lg mb-4" placeholder="Email">
+                        <input id="pass" type="password" class="w-full p-3 border rounded-lg mb-4" placeholder="Password">
+                        <button onclick="auth()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">Sign In</button>
+                    </div>`;
+            }
+        }
+
+        function renderGrid(props) {
+            const grid = document.getElementById('grid');
+            if(!grid) return;
+            grid.innerHTML = props.map(p => `
+                <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition p-4">
+                    <img src="${p.image || 'https://via.placeholder.com/300'}" class="rounded-lg h-40 w-full object-cover mb-4">
+                    <h3 class="font-bold text-lg">${p.title}</h3>
+                    <p class="text-indigo-600 font-bold">$${p.price}/mo</p>
+                </div>
+            `).join('');
+        }
+
+        function renderInquiries() {
+            const section = document.getElementById('inquiry-section');
+            const user = store.getUser();
+            section.innerHTML = `<h2 class="text-xl font-bold mb-4">Your Inquiries</h2>` + 
+                state.inquiries.map(i => `<div class="bg-white p-4 border rounded-lg mb-2"><strong>${i.sender}:</strong> ${i.text}</div>`).join('');
+        }
+
+        function auth() {
+            const email = document.getElementById('email').value;
+            localStorage.setItem('currentUser', JSON.stringify({ email, role: 'user' }));
+            render('user');
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            render('login');
+        }
+
+        window.onload = () => {
+            const user = store.getUser();
+            render(user ? user.role : 'login');
+        };
+    </script>
+</body>
+</html>
