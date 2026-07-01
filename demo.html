@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NestFinder | Professional Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold">NestFinder</h1>
+        <button id="logout-btn" class="hidden bg-red-500 px-3 py-1 rounded" onclick="logout()">Logout</button>
+    </nav>
+
+    <main id="app" class="p-6 max-w-4xl mx-auto"></main>
+
+    <script>
+        // State Management
+        let state = {
+            users: JSON.parse(localStorage.getItem('users') || '[]'),
+            props: JSON.parse(localStorage.getItem('props') || '[]'),
+            inquiries: JSON.parse(localStorage.getItem('inquiries') || '[]'),
+            currentUser: JSON.parse(localStorage.getItem('currentUser') || 'null')
+        };
+
+        function save() {
+            localStorage.setItem('props', JSON.stringify(state.props));
+            localStorage.setItem('inquiries', JSON.stringify(state.inquiries));
+        }
+
+        // Router
+        function render() {
+            const app = document.getElementById('app');
+            const user = state.currentUser;
+            document.getElementById('logout-btn').classList.toggle('hidden', !user);
+
+            if (!user) {
+                app.innerHTML = `
+                    <div class="bg-white p-8 rounded shadow-md max-w-sm mx-auto">
+                        <h2 class="text-2xl mb-4">Login</h2>
+                        <input id="email" class="w-full border p-2 mb-2" placeholder="Email">
+                        <input id="pass" type="password" class="w-full border p-2 mb-2" placeholder="Password">
+                        <select id="role" class="w-full border p-2 mb-4">
+                            <option value="user">User</option>
+                            <option value="seller">Seller</option>
+                        </select>
+                        <button class="w-full bg-blue-600 text-white p-2" onclick="login()">Sign In</button>
+                    </div>`;
+            } else if (user.role === 'user') {
+                app.innerHTML = `
+                    <h2 class="text-2xl mb-4">Available Properties</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${state.props.map(p => `
+                            <div class="bg-white p-4 rounded shadow cursor-pointer" onclick="viewDetails(${p.id})">
+                                <h3 class="font-bold">${p.title}</h3>
+                                <p>$${p.price}/mo</p>
+                            </div>`).join('')}
+                    </div>`;
+            } else {
+                app.innerHTML = `
+                    <h2 class="text-2xl mb-4">Seller Dashboard</h2>
+                    <div class="bg-white p-4 mb-6 rounded shadow">
+                        <input id="title" class="border p-2 w-full mb-2" placeholder="Title">
+                        <input id="price" class="border p-2 w-full mb-2" placeholder="Price">
+                        <button class="bg-green-600 text-white px-4 py-2" onclick="addProp()">Add Property</button>
+                    </div>
+                    <h3 class="text-xl mb-2">Inquiries</h3>
+                    ${state.inquiries.map(i => `<div class="bg-white p-2 mb-1 shadow text-sm">From ${i.sender}: ${i.text}</div>`).join('')}`;
+            }
+        }
+
+        // Actions
+        function login() {
+            const email = document.getElementById('email').value;
+            const role = document.getElementById('role').value;
+            state.currentUser = { email, role };
+            localStorage.setItem('currentUser', JSON.stringify(state.currentUser));
+            render();
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            state.currentUser = null;
+            render();
+        }
+
+        function addProp() {
+            state.props.push({ id: Date.now(), title: document.getElementById('title').value, price: document.getElementById('price').value });
+            save();
+            render();
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
